@@ -115,31 +115,30 @@ static vector<string> split(const string& s, char delim)
 
 void UVPatcher(const IniFile* uvlist, Uint32 baseaddr)
 {
-	for (int idx = 0; idx < 65535; idx++)
+	for (auto iter_ini = uvlist->cbegin(); iter_ini != uvlist->cend(); ++iter_ini)
 	{
-		char key[8]{};
-		snprintf(key, sizeof(key), "%u", idx);
-		if (!uvlist->hasGroup(key))
-			break;
-
-		const IniGroup* group = uvlist->getGroup(key);
-		auto data = group->data();
-		Uint32 addr = uvlist->getIntRadix(key, "a", 16) + baseaddr;
-		auto uvarray = (NJS_TEX*)addr;
-		for (const auto& iter : *data)
+		if (iter_ini->first != "")
 		{
-			vector<string> vals = split(uvlist->getString(key, iter.first.c_str()), ',');
-			if (vals.size() < 2)
-			{
-				continue;
-			}
-			assert(vals.size() == 2);
-			int idx_uv = std::stoi(iter.first);
-			uvarray[idx_uv].u = static_cast<int>(strtod(vals[0].c_str(), nullptr));
-			uvarray[idx_uv].v = static_cast<int>(strtod(vals[1].c_str(), nullptr));
-			//PrintDebug("UV array: %s\n", iter.first.c_str());
-		}
+			//PrintDebug("%s", iter_ini->first.c_str());
+			const IniGroup* group = iter_ini->second;
+			auto data = group->data();
+			Uint32 addr = std::stoi(iter_ini->first, 0, 16) + baseaddr;
+			auto uvarray = (NJS_TEX*)addr;
 
+			for (const auto& iter : *data)
+			{
+				vector<string> vals = split(uvlist->getString(iter_ini->first, iter.first.c_str()), ',');
+				if (vals.size() < 2)
+				{
+					continue;
+				}
+				assert(vals.size() == 2);
+				int idx_uv = std::stoi(iter.first);
+				uvarray[idx_uv].u = static_cast<int>(strtod(vals[0].c_str(), nullptr));
+				uvarray[idx_uv].v = static_cast<int>(strtod(vals[1].c_str(), nullptr));
+				//PrintDebug("UV array: %s\n", iter.first.c_str());
+			}
+		}
 	}
 }
 
